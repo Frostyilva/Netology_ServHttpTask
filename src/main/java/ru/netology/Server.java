@@ -44,14 +44,18 @@ public class Server {
                 final var out = new BufferedOutputStream(socket.getOutputStream())
         ) {
             final var requestLine = in.readLine();
-
-            final var parts = requestLine.split(" ");
-            if (parts.length != 3) {
-                // just close socket
+            if (requestLine == null) {
                 return;
             }
 
-            final var path = parts[1];
+            final var parts = requestLine.split(" ");
+            if (parts.length != 3) {
+                return;
+            }
+
+            final var request = new Request(parts[1]);
+            final var path = request.getPath();
+
             if (!validPaths.contains(path)) {
                 out.write((
                         "HTTP/1.1 404 Not Found\r\n" +
@@ -66,7 +70,6 @@ public class Server {
             final var filePath = Path.of(".", "public", path);
             final var mimeType = Files.probeContentType(filePath);
 
-            // special case for classic
             if (path.equals("/classic.html")) {
                 final var template = Files.readString(filePath);
                 final var content = template.replace(
